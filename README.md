@@ -15,4 +15,4 @@ Gumerov, Nail A., Shoken Kaneko, and Ramani Duraiswami. "Analytical Galerkin bou
 This code base was implemented by Dr. Nail A. Gumerov (https://www.umiacs.umd.edu/people/gumerov).
 
 ## License
-This code is made public under the creative commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) license.
+This code is made public under the MIT license.
