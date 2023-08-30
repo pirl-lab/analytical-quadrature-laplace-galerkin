@@ -1,0 +1,106 @@
+function [L,M,N,Lp]=GalerkinLaplaceTriNum(x1,x2,x3,y1,y2,y3)
+%all Galerkin integrals via 4D numerical quadrature
+%triangle geometry
+lx1=x2-x1; lx2=x3-x2; lx3=x1-x3;
+ly1=y2-y1; ly2=y3-y2; ly3=y1-y3;
+nx=cross(lx1,-lx3); Ax=norm(nx); nx=nx/Ax; Ax=0.5*Ax;
+ny=cross(ly1,-ly3); Ay=norm(ny); ny=ny/Ay; Ay=0.5*Ay;
+ellx1=norm(lx1); ellx2=norm(lx2); ellx3=norm(lx3);
+elly1=norm(ly1); elly2=norm(ly2); elly3=norm(ly3);
+
+a1=lx1; a2=-lx3; a3=-ly1; a4=ly3; e4=x1-y1;
+nxny=dot(nx,ny);
+
+    function F=FL(x,y,z,w)
+        R1=x*a1(1)+y*a2(1)+z*a3(1)+w*a4(1)+e4(1);
+        R2=x*a1(2)+y*a2(2)+z*a3(2)+w*a4(2)+e4(2);
+        R3=x*a1(3)+y*a2(3)+z*a3(3)+w*a4(3)+e4(3);
+        F=1./sqrt(R1.*R1+R2.*R2+R3.*R3);
+    end
+
+    function F=FLpx(x,y,z,w)
+        R1=x*a1(1)+y*a2(1)+z*a3(1)+w*a4(1)+e4(1);
+        R2=x*a1(2)+y*a2(2)+z*a3(2)+w*a4(2)+e4(2);
+        R3=x*a1(3)+y*a2(3)+z*a3(3)+w*a4(3)+e4(3);
+        F=R1./(R1.*R1+R2.*R2+R3.*R3).^1.5;
+    end
+    function F=FLpy(x,y,z,w)
+        R1=x*a1(1)+y*a2(1)+z*a3(1)+w*a4(1)+e4(1);
+        R2=x*a1(2)+y*a2(2)+z*a3(2)+w*a4(2)+e4(2);
+        R3=x*a1(3)+y*a2(3)+z*a3(3)+w*a4(3)+e4(3);
+        F=R2./(R1.*R1+R2.*R2+R3.*R3).^1.5;
+    end
+    function F=FLpz(x,y,z,w)
+        R1=x*a1(1)+y*a2(1)+z*a3(1)+w*a4(1)+e4(1);
+        R2=x*a1(2)+y*a2(2)+z*a3(2)+w*a4(2)+e4(2);
+        R3=x*a1(3)+y*a2(3)+z*a3(3)+w*a4(3)+e4(3);
+        F=R3./(R1.*R1+R2.*R2+R3.*R3).^1.5;
+    end
+    function F=FMpx(x,y,z,w)
+        R1=x*a1(1)+y*a2(1)+z*a3(1)+w*a4(1)+e4(1);
+        R2=x*a1(2)+y*a2(2)+z*a3(2)+w*a4(2)+e4(2);
+        R3=x*a1(3)+y*a2(3)+z*a3(3)+w*a4(3)+e4(3);
+        R=sqrt(R1.*R1+R2.*R2+R3.*R3);
+        nxR=nx(1)*R1+nx(2)*R2+nx(3)*R3;
+        F=(nx(1)-3*nxR.*R1./(R.*R))./(R.*R.*R);
+    end
+    function F=FMpy(x,y,z,w)
+        R1=x*a1(1)+y*a2(1)+z*a3(1)+w*a4(1)+e4(1);
+        R2=x*a1(2)+y*a2(2)+z*a3(2)+w*a4(2)+e4(2);
+        R3=x*a1(3)+y*a2(3)+z*a3(3)+w*a4(3)+e4(3);
+        R=sqrt(R1.*R1+R2.*R2+R3.*R3);
+        nxR=nx(1)*R1+nx(2)*R2+nx(3)*R3;
+        F=(nx(2)-3*nxR.*R2./(R.*R))./(R.*R.*R);
+    end
+    function F=FMpz(x,y,z,w)
+        R1=x*a1(1)+y*a2(1)+z*a3(1)+w*a4(1)+e4(1);
+        R2=x*a1(2)+y*a2(2)+z*a3(2)+w*a4(2)+e4(2);
+        R3=x*a1(3)+y*a2(3)+z*a3(3)+w*a4(3)+e4(3);
+        R=sqrt(R1.*R1+R2.*R2+R3.*R3);
+        nxR=nx(1)*R1+nx(2)*R2+nx(3)*R3;
+        F=(nx(3)-3*nxR.*R3./(R.*R))./(R.*R.*R);
+    end
+    function F=FMp(x,y,z,w)
+        R1=x*a1(1)+y*a2(1)+z*a3(1)+w*a4(1)+e4(1);
+        R2=x*a1(2)+y*a2(2)+z*a3(2)+w*a4(2)+e4(2);
+        R3=x*a1(3)+y*a2(3)+z*a3(3)+w*a4(3)+e4(3);
+        R=sqrt(R1.*R1+R2.*R2+R3.*R3);
+        nxR=nx(1)*R1+nx(2)*R2+nx(3)*R3;
+        nyR=ny(1)*R1+ny(2)*R2+ny(3)*R3;
+        F=(nxny-3*nxR.*nyR./(R.*R))./(R.*R.*R);
+    end
+
+xmin=0; xmax=1; ymin=0; ymax= @(x) 1-x;
+zmin=0; zmax=1; wmin=0; wmax= @(x,y,z) 1-z;
+
+Lp=zeros(1,3);
+
+L=integral4(@FL,xmin,xmax,ymin,ymax,zmin,zmax,wmin,wmax,'AbsTol',0,'RelTol',1e-12);
+
+% Mp(1)=integral4(@FMpx,xmin,xmax,ymin,ymax,zmin,zmax,wmin,wmax,'AbsTol',0,'RelTol',1e-12);
+% Mp(2)=integral4(@FMpy,xmin,xmax,ymin,ymax,zmin,zmax,wmin,wmax,'AbsTol',0,'RelTol',1e-12);
+% Mp(3)=integral4(@FMpz,xmin,xmax,ymin,ymax,zmin,zmax,wmin,wmax,'AbsTol',0,'RelTol',1e-12);
+
+% L=integral4(@FL,xmin,xmax,ymin,ymax,zmin,zmax,wmin,wmax);
+% Lp(1)=integral4(@FLpx,xmin,xmax,ymin,ymax,zmin,zmax,wmin,wmax);
+% Lp(2)=integral4(@FLpy,xmin,xmax,ymin,ymax,zmin,zmax,wmin,wmax);
+% Lp(3)=integral4(@FLpz,xmin,xmax,ymin,ymax,zmin,zmax,wmin,wmax);
+% Mp(1)=integral4(@FMpx,xmin,xmax,ymin,ymax,zmin,zmax,wmin,wmax);
+% Mp(2)=integral4(@FMpy,xmin,xmax,ymin,ymax,zmin,zmax,wmin,wmax);
+% Mp(3)=integral4(@FMpz,xmin,xmax,ymin,ymax,zmin,zmax,wmin,wmax);
+
+% L=Ax*Ay*L/pi;
+% Lp=Ax*Ay*Lp/pi;
+% M=-dot(nx,Lp);
+% N=Ax*Ay*N/pi;
+
+% Mp=Ax*Ay*Mp/pi;
+% N=dot(ny,Mp);
+
+L=4*Ax*Ay*L;
+% Lp=4*Ax*Ay*Lp;
+% M=-dot(nx,Lp);
+% N=4*Ax*Ay*N;
+Lp=zeros(1,3); M=0; N=0;
+
+end

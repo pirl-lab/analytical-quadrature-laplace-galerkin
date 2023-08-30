@@ -1,0 +1,14 @@
+function plot_Fig_hypersingularity
+load('Fig_hyper_data.mat','ep1','epsi','errL','errM','errN')
+%save Fig_hyper_data ep1 epsi errL errM errN
+
+neps=length(ep1);
+hf=figure; set(hf,'Color','w');
+loglog(ep1(1:3:neps),errL(1:3:neps),'ks');
+hold on;
+loglog(ep1(1:3:neps),errN(1:3:neps),'ko');
+xlabel('1/h_4'); ylabel('Relaive error')
+C=errL(neps)*ep1(neps);
+lin=C./ep1;
+loglog(ep1(1:3:length(ep1)),lin(1:3:length(ep1)),'k--');
+legend('Weakly singular','Hyper singular','err=C*\epsilon')

@@ -1,0 +1,139 @@
+function [L,M,N,Lp]=GalerkinLaplaceTri(x1,x2,x3,y1,y2,y3)
+%all analytical Galerkin integrals
+global cases
+cases=zeros(8,1);
+
+zerotol=0; %1e-12;
+
+%triangle geometry
+lx1=x2-x1; lx2=x3-x2; lx3=x1-x3;
+ly1=y2-y1; ly2=y3-y2; ly3=y1-y3;
+nx=cross(lx1,-lx3); Ax=norm(nx); nx=nx/Ax; Ax=0.5*Ax;
+ny=cross(ly1,-ly3); Ay=norm(ny); ny=ny/Ay; Ay=0.5*Ay;
+ellx1=norm(lx1); ellx2=norm(lx2); ellx3=norm(lx3);
+elly1=norm(ly1); elly2=norm(ly2); elly3=norm(ly3);
+
+ncx1=cross(lx1,nx); ncx2=cross(lx2,nx); ncx3=cross(lx3,nx);
+ncx1=ncx1/norm(ncx1); ncx2=ncx2/norm(ncx2); ncx3=ncx3/norm(ncx3);
+ncy1=cross(ly1,ny); ncy2=cross(ly2,ny); ncy3=cross(ly3,ny);
+ncy1=ncy1/norm(ncy1); ncy2=ncy2/norm(ncy2); ncy3=ncy3/norm(ncy3);
+
+nxy=dot(nx,ny);
+nxy1=min(norm(nx+ny),norm(nx-ny));
+
+a1=lx1; a2=-lx3; a3=-ly1; a4=ly3; e4=x1-y1;
+s0=zeros(4,1); 
+%Mx=zeros(3,3);
+
+%if abs(abs(nxy)-1)>zerotol %non-parallel case
+if nxy1>zerotol %non-parallel case
+     
+    h4=0;
+    %expand e4 over (a1,a2,a3,a4)
+    Mx=zeros(4,4);
+    Mx(1,2)=dot(a1,a2); Mx(1,3)=dot(a1,a3); Mx(1,4)=dot(a1,a4);
+    Mx(2,3)=dot(a2,a3); Mx(2,4)=dot(a2,a4); Mx(3,4)=dot(a3,a4);
+    Mx=diag([dot(a1,a1) dot(a2,a2) dot(a3,a3) dot(a4,a4)])+Mx+Mx';
+    rhs=[dot(a1,e4) dot(a2,e4) dot(a3,e4) dot(a4,e4)]';
+    
+    
+%     %check if a3 is in the plane (a1,a2)   
+%     if norm(dot(a3,nx))>zerotol*norm(a3)
+%         Mx(1,2)=dot(a1,a2); Mx(1,3)=dot(a1,a3); Mx(2,3)=dot(a2,a3);
+%         Mx=diag([dot(a1,a1) dot(a2,a2) dot(a3,a3)])+Mx+Mx';
+%         rhs=[dot(a1,e4) dot(a2,e4) dot(a3,e4)]';
+%         s0(1:3)=Mx\rhs;
+%     else
+%         Mx(1,2)=dot(a1,a2); Mx(1,3)=dot(a1,a4); Mx(2,3)=dot(a2,a4);
+%         Mx=diag([dot(a1,a1) dot(a2,a2) dot(a4,a4)])+Mx+Mx';
+%         rhs=[dot(a1,e4) dot(a2,e4) dot(a4,e4)]';
+%         s=Mx\rhs; s0(1:2)=s(1:2); s0(4)=s(3);
+%     end
+    
+    I31=I3(a1,a2,a3,e4,h4);
+    I32=I3(a1,a2,a4,e4,h4);
+    I33=I3(a1,a2,a4-a3,e4+a3,h4);
+    I34=I3(a3,a4,a1,e4,h4);
+    I35=I3(a3,a4,a2,e4,h4);
+    I36=I3(a3,a4,a2-a1,e4+a1,h4);
+    
+    L=4*Ax*Ay*((1+s0(3)+s0(4))*I33-s0(4)*I31-s0(3)*I32+...
+        (1+s0(1)+s0(2))*I36-s0(2)*I34-s0(1)*I35);
+    
+    Fx=6*Ay*(ellx1*I34*ncx1+ellx3*I35*ncx3+ellx2*I36*ncx2);
+    Fy=6*Ax*(elly1*I31*ncy1+elly3*I32*ncy3+elly2*I33*ncy2);
+    
+    M=(nxy*dot(ny,Fx)-dot(nx,Fy))/(1-nxy*nxy);
+    
+else %parallel case
+    
+    %find projection to x-triangle
+    e4x=-cross(nx,cross(nx,e4));
+    Mx=zeros(2,2);
+    Mx(1,1)=dot(a1,a1);  Mx(1,2)=dot(a1,a2); Mx(2,1)=Mx(1,2); Mx(2,2)=dot(a2,a2);
+    rhs=[dot(a1,e4x) dot(a2,e4x)]';
+    s0(1:2)=Mx\rhs;
+    
+    delta=-dot(e4,nx);
+    h4=abs(delta);
+    
+    I33=I3(a1,a2,a4-a3,e4x+a3,h4);
+    I34=I3(a3,a4,a1,e4x,h4);
+    I35=I3(a3,a4,a2,e4x,h4);
+    I36=I3(a3,a4,a2-a1,e4x+a1,h4);
+    
+    L=4*Ax*Ay*(I33+...
+        (1+s0(1)+s0(2))*I36-s0(2)*I34-s0(1)*I35);
+      
+    if h4>norm(e4)*zerotol
+        I33d=I3d(a1,a2,a4-a3,e4x+a3,h4);
+        I34d=I3d(a3,a4,a1,e4x,h4);
+        I35d=I3d(a3,a4,a2,e4x,h4);
+        I36d=I3d(a3,a4,a2-a1,e4x+a1,h4);
+        
+        M=4*Ax*Ay*delta*(I33d+...
+            (1+s0(1)+s0(2))*I36d-s0(2)*I34d-s0(1)*I35d);
+    else
+        M=0;
+    end
+  
+    h4=0;
+    I34d2=I3(a3,a4,a1,e4,h4);
+    I35d2=I3(a3,a4,a2,e4,h4);
+    I36d2=I3(a3,a4,a2-a1,e4+a1,h4);
+    
+    Fx=6*Ay*(ellx1*I34d2*ncx1+ellx3*I35d2*ncx3+ellx2*I36d2*ncx2);
+end
+
+Lp=-Fx-nx*M;
+
+H=zeros(3,3); h3=0; h4=0;
+H(1,1)=I2s(lx1,-ly1,x1-y1,h3,h4);
+H(1,2)=I2s(lx1,-ly2,x1-y2,h3,h4);
+H(1,3)=I2s(lx1,-ly3,x1-y3,h3,h4);
+H(2,1)=I2s(lx2,-ly1,x2-y1,h3,h4);
+H(2,2)=I2s(lx2,-ly2,x2-y2,h3,h4);
+H(2,3)=I2s(lx2,-ly3,x2-y3,h3,h4);
+H(3,1)=I2s(lx3,-ly1,x3-y1,h3,h4);
+H(3,2)=I2s(lx3,-ly2,x3-y2,h3,h4);
+H(3,3)=I2s(lx3,-ly3,x3-y3,h3,h4);
+
+H1=H(1,1)*lx1+H(2,1)*lx2+H(3,1)*lx3;
+H2=H(1,2)*lx1+H(2,2)*lx2+H(3,2)*lx3;
+H3=H(1,3)*lx1+H(2,3)*lx2+H(3,3)*lx3;
+
+N=-6*(dot(H1,ly1)+dot(H2,ly2)+dot(H3,ly3));
+
+%M=0; Lp=zeros(1,3);
+
+%H=-6*(elly1*cross(ncy1,H1)+elly2*cross(ncy2,H2)+elly3*cross(ncy3,H3));
+%H=6*(cross(ly1,H1)+cross(ly2,H2)+cross(ly3,H3));
+
+%Mp=cross(ny,H)+N*ny;
+
+%M=0; N=0; Lp=zeros(1,3); Mp=zeros(1,3);
+%N=0; 
+%Mp=zeros(1,3);
+
+%L=L/(4*pi); M=M/(4*pi); N=N/(4*pi); Lp=Lp/(4*pi); %Mp=Mp/(4*pi);
+
