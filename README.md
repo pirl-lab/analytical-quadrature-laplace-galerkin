@@ -2,7 +2,7 @@
 
 ## Introduction
 This repository contains a Matlab implementation of the algorithm presented in the following paper:
-Gumerov, Nail A., Shoken Kaneko, and Ramani Duraiswami. "Analytical Galerkin boundary integrals of Laplace kernel layer potentials in $\mathbb{R}^3$." https://arxiv.org/abs/2302.03247 (2023).
+Nail A. Gumerov, Shoken Kaneko, and Ramani Duraiswami. "Analytical Galerkin boundary integrals of Laplace kernel layer potentials in $\mathbb{R}^3$." https://arxiv.org/abs/2302.03247 (2023).
 
 
 ## Description
